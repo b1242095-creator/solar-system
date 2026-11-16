@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d16">
+  <title>太陽系模擬器</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <!-- 頁首顯示模擬狀態，主畫面包含軌道、行星資料與時間控制。 -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="identity"><span class="orbit-mark" aria-hidden="true"></span>太陽系觀測站</div>
+      <span id="status" class="status" role="status">模擬運行中</span>
+    </div>
+  </header>
+  <main class="shell">
+    <div class="intro">
+      <h1>太陽系模擬器</h1>
+      <p>觀察八大行星的公轉，點選行星查看詳細資料。</p>
+    </div>
+    <div class="dashboard">
+      <section class="observatory" aria-labelledby="orbit-title">
+        <div class="map">
+          <div id="stars" aria-hidden="true"></div>
+          <div class="map-heading">
+            <h2 id="orbit-title">軌道視圖</h2>
+            <span>俯視 · 圓形軌道</span>
+          </div>
+          <div id="system" class="system" role="group" aria-label="太陽與八大行星">
+            <div class="sun"><span>太陽</span></div>
+          </div>
+          <p class="scale-note">天體大小、軌道距離與動畫速度採示意比例</p>
+        </div>
+        <nav id="planet-list" class="planet-list" aria-label="選擇行星"></nav>
+      </section>
+      <div class="sidebar">
+        <section class="card details" aria-labelledby="details-title">
+          <h2 id="details-title">行星資料</h2>
+          <!-- 選取行星後更新整個資料區，讓輔助工具也能讀到新內容。 -->
+          <div id="planet-details" aria-live="polite" aria-atomic="true">
+            <div class="planet-hero">
+              <div id="portrait" class="portrait" aria-hidden="true"><span id="portrait-body" class="orb"></span></div>
+              <div><p id="planet-type" class="planet-type"></p><h3 id="planet-name"></h3></div>
+            </div>
+            <p id="planet-description" class="description"></p>
+            <dl>
+              <div><dt>公轉週期</dt><dd id="planet-period"></dd></div>
+              <div><dt>與太陽的平均距離</dt><dd id="planet-distance"></dd></div>
+            </dl>
+          </div>
+        </section>
+        <section class="card controls" aria-labelledby="controls-title">
+          <h2 id="controls-title">模擬控制</h2>
+          <div class="speed-label">
+            <label for="speed">公轉速度</label>
+            <output id="speed-value" for="speed" aria-live="off">1.0×</output>
+          </div>
+          <input id="speed" type="range" min="0.1" max="5" step="0.1" value="1">
+          <div class="range-labels" aria-hidden="true"><span>0.1×</span><span>5×</span></div>
+          <div class="actions">
+            <button type="button" id="toggle" class="primary">暫停</button>
+            <button type="button" id="reset">重設</button>
+          </div>
+        </section>
+      </div>
+    </div>
+    <footer>天文資料來源 · <a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/">NASA 行星資料表</a></footer>
+  </main>
+</body>
+</html>

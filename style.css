@@ -1,0 +1,171 @@
+/* 以深藍和薄荷綠建立觀測介面，行星顏色可同時套用於軌道和資訊卡。 */
+:root {
+  color-scheme: dark;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  background: #080d16;
+  color: #eaf1fc;
+  --muted: #a0afc6;
+  --accent: #79edcb;
+  --border: #263347;
+  --panel: #101925;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.topbar { border-bottom: 1px solid #222e40; background: #0b121d; }
+.topbar-inner, .shell { width: min(1200px, calc(100% - 64px)); margin-inline: auto; }
+.topbar-inner { min-height: 63px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.identity { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .08em; }
+.orbit-mark { width: 23px; height: 23px; border: 1px solid var(--accent); border-radius: 50%; position: relative; }
+.orbit-mark::before, .orbit-mark::after { content: ""; position: absolute; border-radius: 50%; background: var(--accent); }
+.orbit-mark::before { width: 5px; height: 5px; left: 8px; top: 8px; }
+.orbit-mark::after { width: 6px; height: 6px; right: -2px; top: 1px; box-shadow: 0 0 9px var(--accent); }
+.status { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #28594f; border-radius: 20px; padding: 5px 10px; background: #112922; color: #a3f4dc; font-size: .76rem; white-space: nowrap; }
+.status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.is-paused .status { color: #f4d09a; border-color: #604a37; background: #2b221d; }
+.intro { margin-block: 26px 22px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: clamp(1.85rem, 4vw, 2.65rem); letter-spacing: .05em; }
+.intro p { color: var(--muted); margin-top: 8px; font-size: .92rem; }
+.dashboard { display: grid; grid-template-columns: minmax(0, 1fr) minmax(275px, 318px); gap: 20px; align-items: start; }
+.observatory, .card { border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+.map {
+  height: clamp(440px, calc(100svh - 273px), 660px);
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  container-type: size;
+  background: radial-gradient(ellipse at 46% 46%, #15233c, transparent 61%),
+    radial-gradient(ellipse at 91% 93%, #10273c, transparent 65%), #070c17;
+}
+.map-heading { position: absolute; top: 17px; left: 20px; z-index: 1; pointer-events: none; }
+h2 { font-size: 1rem; letter-spacing: .065em; }
+.map-heading span, .scale-note { color: var(--muted); font-size: .72rem; }
+.map-heading span { display: block; margin-top: 4px; }
+.scale-note { position: absolute; bottom: 13px; left: 18px; right: 18px; pointer-events: none; }
+
+/* 軌道維持正圓，依觀測區較短的一邊縮放。 */
+.system { position: relative; width: min(calc(100cqw - 38px), calc(100cqh - 64px)); aspect-ratio: 1; }
+.orbit, .sun { position: absolute; top: 50%; left: 50%; translate: -50% -50%; border-radius: 50%; }
+.orbit { width: var(--diameter); aspect-ratio: 1; border: 1px solid #a4c5f337; pointer-events: none; }
+.orbit.is-selected { border-color: #79edcb72; box-shadow: 0 0 12px #79edcb10, inset 0 0 12px #79edcb10; }
+.sun {
+  z-index: 1;
+  width: clamp(37px, 9cqh, 57px);
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 35% 32%, #fffbd1 4%, #ffe497 29%, #ffb33c 58%, #f77426 86%);
+  box-shadow: 0 0 12px #ffbe57e0, 0 0 34px #ff9c4477, 0 0 62px #ff9c4438;
+}
+.sun span { position: absolute; top: calc(100% + 4px); left: 50%; translate: -50%; white-space: nowrap; color: #fff0bf; font-size: .69rem; }
+.planet { --size: var(--desktop-size); position: absolute; display: grid; place-items: center; width: max(28px, calc(var(--size) + 8px)); aspect-ratio: 1; translate: -50% -50%; padding: 0; border: 0; background: transparent; border-radius: 50%; color: #e7eefc; z-index: 2; }
+.planet.is-selected { z-index: 3; color: #b1f9e5; }
+.planet:hover, .planet:focus-visible { z-index: 4; }
+.planet .orb { width: var(--size); }
+.planet.is-selected .orb { outline: 1px solid var(--accent); outline-offset: 3px; }
+.planet:hover .orb, .planet:focus-visible .orb { scale: 1.17; }
+.planet-name { position: absolute; top: 100%; white-space: nowrap; font-size: .69rem; line-height: 1.2; text-shadow: 0 1px 4px #000, 0 0 6px #000; pointer-events: none; }
+.planet-hint { position: absolute; bottom: calc(100% + 3px); padding: 5px 7px; background: #142437; border: 1px solid #425975; border-radius: 6px; color: #eef5ff; font-size: .69rem; white-space: nowrap; visibility: hidden; pointer-events: none; }
+.planet:focus-visible .planet-hint { visibility: visible; }
+@media (hover: hover) { .planet:hover .planet-hint { visibility: visible; } }
+
+/* 星點獨立閃爍，暫停時保留目前亮度。 */
+#stars { position: absolute; inset: 0; pointer-events: none; }
+.star { position: absolute; width: var(--width); aspect-ratio: 1; border-radius: 50%; background: #d9e8ff; opacity: var(--brightness); animation: twinkle var(--duration) ease-in-out var(--delay) infinite alternate; }
+.star.bright { box-shadow: 0 0 7px 1px #a6c9ff83; }
+@keyframes twinkle { to { opacity: .18; scale: .76; } }
+.is-paused .star { animation-play-state: paused; }
+
+/* 漸層模擬球體光影，土星環採前後兩層以呈現遮擋。 */
+.orb { display: block; position: relative; isolation: isolate; width: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--surface, var(--planet-color)); box-shadow: 0 0 12px color-mix(in srgb, var(--planet-color) 45%, transparent); transition: scale .18s; }
+.orb::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 29% 23%, #fff5, transparent 40%), radial-gradient(circle at 30% 27%, transparent 33%, #070b1ad9 100%); }
+.mercury { --planet-color: #b5a597; --surface: radial-gradient(circle at 31% 48%, #81766d 8%, transparent 10%), radial-gradient(circle at 65% 35%, #827573 8%, transparent 12%), #b5a597; }
+.venus { --planet-color: #e7b76e; --surface: repeating-linear-gradient(162deg, #f2ca87, #bd804c 19%, #efb778 37%); }
+.earth { --planet-color: #62b5fb; --surface: radial-gradient(ellipse at 33% 36%, #8bc88a 8%, #4c966d 22%, transparent 25%), radial-gradient(ellipse at 64% 66%, #66b18a 15%, transparent 28%), repeating-linear-gradient(155deg, #3a90d5 0 18%, #97d3ee 24%, #326bb5 36%); }
+.mars { --planet-color: #e58063; --surface: radial-gradient(ellipse at 62% 60%, #b35240 19%, transparent 31%), radial-gradient(ellipse at 35% 34%, #fbb88b, #ca5b45 75%); }
+.jupiter { --planet-color: #dcaf8d; --surface: radial-gradient(ellipse at 67% 67%, #b66552 6%, #d58b6b 14%, transparent 17%), repeating-linear-gradient(169deg, #e9c6a2 0 12%, #ab7763 16% 24%, #daaa87 29% 40%); }
+.saturn { --planet-color: #ddc18a; --surface: repeating-linear-gradient(168deg, #ead3a2 0 13%, #bfa271 22%, #ddc18a 31%); }
+.uranus { --planet-color: #86d5db; --surface: linear-gradient(153deg, #c0edef, #6abacb 73%); }
+.neptune { --planet-color: #7394ff; --surface: repeating-linear-gradient(165deg, #7394ef, #4b69cf 24%, #506fdd 35%); }
+.saturn .orb::after, .saturn .orb .ring { content: ""; position: absolute; inset: 27% -32%; transform: rotate(-23deg); border: solid color-mix(in srgb, #ebce96 87%, transparent); border-width: 2px 3px; border-radius: 50%; }
+.saturn .orb::after { clip-path: inset(49% 0 0); }
+.saturn .orb .ring { clip-path: polygon(0 0, 100% 0, 100% 50%, 80% 50%, 80% 15%, 20% 15%, 20% 50%, 0 50%); opacity: .68; }
+
+.planet-list { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 5px; padding: 9px; background: #0e1723; border-top: 1px solid var(--border); }
+.planet-option { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 39px; padding: 4px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #b8c6da; white-space: nowrap; font-size: .78rem; }
+.planet-option::before { content: ""; width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--planet-color); }
+.planet-option:hover { background: #18273a; }
+.planet-option.is-selected { border-color: #376b63; background: #18332f; color: #b1f9e5; }
+.sidebar { display: grid; gap: 16px; }
+.card { padding: 18px; background: var(--panel); }
+.card h2 { color: #d1deee; }
+.planet-hero { display: flex; align-items: center; gap: 15px; margin-top: 16px; }
+.portrait { display: grid; place-items: center; width: 69px; aspect-ratio: 1; border-radius: 13px; border: 1px solid #2b3a51; background: radial-gradient(circle, #243852, #141f31 75%); }
+.portrait .orb { width: 38px; }
+.planet-type { color: var(--accent); font-size: .75rem; letter-spacing: .08em; }
+.planet-hero h3 { margin-top: 4px; font-size: 1.65rem; }
+.description { margin-top: 13px; min-height: 3.2em; color: #bdcadb; font-size: .87rem; line-height: 1.65; }
+dl { margin: 14px 0 0; }
+dl div { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; padding: 9px 0; border-top: 1px solid var(--border); }
+dl div:last-child { padding-bottom: 0; }
+dt { color: var(--muted); font-size: .79rem; }
+dd { margin: 0; font-size: .83rem; font-weight: 700; text-align: right; }
+.speed-label { display: flex; align-items: center; justify-content: space-between; margin-top: 13px; font-size: .85rem; color: #bfcde0; }
+output { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 700; }
+input[type="range"] {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 24px;
+  margin: 5px 0 0;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius: 4px; background: linear-gradient(90deg, var(--accent) var(--progress, 18.37%), #344257 var(--progress, 18.37%)); }
+input[type="range"]::-moz-range-track { height: 5px; border-radius: 4px; background: linear-gradient(90deg, var(--accent) var(--progress, 18.37%), #344257 var(--progress, 18.37%)); }
+input[type="range"]::-webkit-slider-thumb { appearance: none; width: 15px; height: 15px; margin-top: -5px; border-radius: 50%; background: var(--accent); border: 2px solid #0e1825; box-shadow: 0 0 0 1px var(--accent); }
+input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid #0e1825; box-shadow: 0 0 0 1px var(--accent); }
+.range-labels { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 13px; }
+.actions button { min-height: 42px; border-radius: 8px; border: 1px solid #3b4d66; color: #dce8fa; background: #182536; font-size: .88rem; font-weight: 700; }
+.actions button:hover { background: #253851; }
+.actions .primary { color: #09251d; background: var(--accent); border-color: var(--accent); }
+.actions .primary:hover { background: #aaf6df; }
+footer { padding: 15px 0 22px; color: var(--muted); font-size: .73rem; }
+footer a { color: #c1d6ec; text-underline-offset: 3px; }
+
+@media (max-width: 1020px) {
+  .topbar-inner, .shell { width: calc(100% - 36px); }
+  .planet-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .dashboard { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; }
+  .map { height: clamp(340px, 82vw + 52px, 530px); }
+}
+@media (max-width: 550px) {
+  .topbar-inner, .shell { width: calc(100% - 24px); }
+  .topbar-inner { min-height: 54px; }
+  .identity { font-size: .88rem; }
+  .intro { margin-block: 19px 14px; }
+  .intro p { font-size: .83rem; }
+  .sidebar { grid-template-columns: minmax(0, 1fr); }
+  .map-heading { top: 9px; left: 12px; }
+  .map-heading h2 { font-size: .83rem; }
+  .map-heading span, .scale-note, .planet-name { font-size: .625rem; }
+  .scale-note { bottom: 8px; left: 12px; }
+  .system { width: min(calc(100cqw - 30px), calc(100cqh - 55px)); }
+  .planet { --size: calc(var(--desktop-size) * .76); }
+  .sun { width: 34px; }
+  .planet-option { min-height: 42px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .star, .orb { animation: none; transition: none; }
+}
